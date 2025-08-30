@@ -25,6 +25,7 @@
     "express": "4.19.2",
     "joi": "17.13.3",
     "jsonwebtoken": "9.0.2",
+    "mongodb": "^6.19.0",
     "mongoose": "7.6.12",
     "passport": "0.7.0",
     "passport-http-bearer": "1.0.1",

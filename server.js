@@ -1,4 +1,6 @@
 import app from "./src/application.js";
+import "dotenv/config";
+
 
 const port = process.env.PORT || 3000;
 

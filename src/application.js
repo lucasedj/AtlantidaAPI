@@ -2,6 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import connectToDB from '../config/dbConnect.js';
 import routes from './routes/index.js';
+import "dotenv/config";
+console.log("MONGO_URI:", process.env.MONGO_URI);
+
+
 
 const app = express();
 app.use(cors({
