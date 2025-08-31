@@ -2,7 +2,7 @@
 import mongoose from "mongoose";
 
 export default async function connectToDB() {
-  const uri = process.env.MONGO_URI;
+  const uri = process.env.MONGO_URI ?? process.env.MONGODB_URI;
   if (!uri) throw new Error("MONGO_URI não definida no .env");
 
   // Desativa buffer para falhar rápido (em vez de "buffering timed out")
