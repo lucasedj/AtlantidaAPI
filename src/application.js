@@ -5,8 +5,6 @@ import routes from './routes/index.js';
 import "dotenv/config";
 console.log("MONGO_URI:", process.env.MONGO_URI);
 
-
-
 const app = express();
 app.use(cors({
     origin: '*',

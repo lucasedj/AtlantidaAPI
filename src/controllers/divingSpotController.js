@@ -4,7 +4,9 @@ class DivingSpotController {
  static async findAllDivingSpots(_req, res) {
   try {
     const divingSpots = await DivingSpotService.findAllDivingSpots();
+    console.log(divingSpots)
     res.status(200).json(divingSpots);
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

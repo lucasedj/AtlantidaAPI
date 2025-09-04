@@ -1,8 +1,7 @@
-// config/dbConnect.js
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-export default async function connectToDB() {
-  const uri = process.env.MONGO_URI ?? process.env.MONGODB_URI;
+const connectToDB = async () => {
+  const uri = (process.env.MONGO_URI ?? process.env.MONGODB_URI) || 'mongodb://localhost:27017/mongodb-atlantida';
   if (!uri) throw new Error("MONGO_URI não definida no .env");
 
   // Desativa buffer para falhar rápido (em vez de "buffering timed out")
@@ -13,10 +12,18 @@ export default async function connectToDB() {
   mongoose.connection.on("error", (e) => console.error("❌ Mongo error:", e));
   mongoose.connection.on("disconnected", () => console.warn("⚠️ Mongo desconectado"));
 
-  // timeouts curtos ajudam a ver erro real
-  await mongoose.connect(uri, {
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 20000,
-    // dbName: "atlantida", // use se a sua URI não tiver o db no final
-  });
-}
+  try {
+    await mongoose.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 20000,
+      // dbName: "atlantida", // use se a sua URI não tiver o db no final
+    });
+    console.log('Conectado ao MongoDB!');
+  } catch (error) {
+    console.error('Erro na conexão com o MongoDB:', error);
+  }
+};
+
+export default connectToDB;
