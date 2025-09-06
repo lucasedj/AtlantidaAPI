@@ -1,5 +1,6 @@
-import UsersService from '../services/usersService.js';
+// controllers/usersController.js
 import TokenService from '../services/tokenService.js';
+import UsersService from '../services/usersService.js';
 import DiveLogsService from '../services/diveLogsService.js';
 import CertificatesService from '../services/certificatesService.js';
 import AddressesService from '../services/addressesService.js';
@@ -16,28 +17,26 @@ class UserController {
   static async findUserByToken(req, res) {
     try {
       const id = await TokenService.returnUserIdToToken(req.headers.authorization);
-
       const user = await UsersService.findUserByToken(id);
       res.status(200).json(user);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
- };
-
- static async findUserById(req, res) {
-  try {
-    const { userId } = req.params;
-    const user = await UsersService.findUserByToken(userId);
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
- };
 
- static async findUserByEmail(req, res) {
+  static async findUserById(req, res) {
+    try {
+      const { userId } = req.params;
+      const user = await UsersService.findUserByToken(userId);
+      res.status(200).json(user);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async findUserByEmail(req, res) {
     try {
       const user = await UsersService.findUserByEmail(req.body.email);
-      
       res.status(200).json(user);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -46,12 +45,12 @@ class UserController {
 
   static async createUser(req, res) {
     try {
-      const user = await UsersService.createUser(req.body);      
+      const user = await UsersService.createUser(req.body);
       res.status(201).json(user);
     } catch (error) {
       res.status(400).json({ message: error.message });
     }
-  };
+  }
 
   static async recoverPassword(req, res) {
     try {
@@ -60,68 +59,69 @@ class UserController {
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  };
+  }
 
+  // 🔧 PATCH AQUI
   static async login(req, res) {
     try {
-      const token = await TokenService.createTokenJWT(req.body.email);
-      
-      res.set('Authorization', token);
-      res.status(200).json({ token }); 
+      // 'local' já autenticou e colocou o user aqui:
+      const user = req.user; // seguro (sem password)
+      // Assina com sub = _id (e opcionalmente email)
+      const token = await TokenService.createTokenJWT({
+        id: user._id?.toString?.() ?? user._id,
+        email: user.email,
+      });
+
+      // opcional: enviar também no header, no formato Bearer
+      res.set('Authorization', `Bearer ${token}`);
+
+      // front já espera token no body
+      return res.status(200).json({ token, user });
     } catch (error) {
-      res.status(401).json({ message: error.message });
+      return res.status(401).json({ message: error.message });
     }
-  };
+  }
 
   static async updatePassword(req, res) {
     try {
       const id = await TokenService.returnUserIdToToken(req.headers.authorization);
-
       await UsersService.updatePassword(id, req.body.password, req.body.newPassword);
       res.status(200).send({ message: 'success' });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  };
+  }
 
   static async updateUser(req, res) {
     try {
       const id = await TokenService.returnUserIdToToken(req.headers.authorization);
-
       const updatedUser = await UsersService.updateUser(id, req.body);
       res.status(200).json(updatedUser);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  };
+  }
 
   static async deleteUser(req, res) {
     try {
       const userId = await TokenService.returnUserIdToToken(req.headers.authorization);
 
       await UsersService.deleteUser(userId);
-      
+
       const diveLogs = await DiveLogsService.findDiveLogsByUserId(userId);
-      for (const diveLog of diveLogs) {
-        await DiveLogsService.deleteDiveLog(diveLog._id);
-      }
+      for (const diveLog of diveLogs) await DiveLogsService.deleteDiveLog(diveLog._id);
 
       const certificates = await CertificatesService.findCertificateByUserId(userId);
-      for (const certificate of certificates) {
-        await CertificatesService.deleteCertificate(certificate._id);
-      }
-      
+      for (const certificate of certificates) await CertificatesService.deleteCertificate(certificate._id);
+
       const addresses = await AddressesService.findAddressByUserId(userId);
-      for (const address of addresses) {
-        await AddressesService.deleteAddress(address._id);
-      }
-  
+      for (const address of addresses) await AddressesService.deleteAddress(address._id);
+
       res.status(204).json({ message: "Usuário deletado com sucesso" });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  };
-  
+  }
 }
 
 export default UserController;

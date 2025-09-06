@@ -1,47 +1,43 @@
-import { config as dotenvConfig } from 'dotenv';
-dotenvConfig();
-
+// services/tokenService.js
+import 'dotenv/config';
 import jwt from 'jsonwebtoken';
-import User from '../models/user.js';
-import logger from '../utils/logger.js';
 
-const chaveJWTDev = process.env.CHAVE_JWT;
+const JWT_SECRET = process.env.CHAVE_JWT || 'dev_secret';
+const EXPIRES_IN = '720h'; // 30 dias
 
 class TokenService {
-
-  static async createTokenJWT(email) {
-    logger.info('TokenService.createTokenJWT');
-    const account = await User.findOne({ email: email });
-
-    const payload = {
-      id: account.id,
-    };
-
-    const token = jwt.sign(payload, chaveJWTDev, { expiresIn: '720h' });
-    return token;
+  /**
+   * Cria token **sem** consultar o banco.
+   * Passe sempre o id (e opcionalmente email) do usuário já autenticado (req.user).
+   */
+  static createTokenJWT({ id, email }) {
+    if (!id) throw new Error('ID do usuário ausente para assinar o token');
+    const payload = { sub: id, email }; // ← padrão JWT
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: EXPIRES_IN });
   }
 
-  static async createNewTokenJWT(req) {
-    logger.info('TokenService.createNewTokenJWT');
-    const token = req.headers.authorization;
-
-    const id = await this.returnUserIdToToken(token);
-
-    const novoToken = jwt.sign({ id: id }, chaveJWTDev, { expiresIn: '720h' });
-    return novoToken;
+  static createNewTokenJWTFromHeader(authorizationHeader) {
+    const userId = this.returnUserIdFromHeader(authorizationHeader);
+    return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: EXPIRES_IN });
   }
 
-  static async returnUserIdToToken(token) {
-    logger.info('TokenService.returnUserIdToToken');
-    const tokenJWT = token.replace("Bearer ", "");
+  /** Aceita "Bearer x.y.z" ou "x.y.z" */
+  static returnUserIdFromHeader(authorizationHeader = '') {
+    const maybeToken = authorizationHeader?.startsWith('Bearer ')
+      ? authorizationHeader.slice(7)
+      : authorizationHeader;
 
-    const decoded = jwt.verify(tokenJWT, chaveJWTDev);
+    return this.returnUserIdFromToken(maybeToken);
+  }
 
-    if (!decoded.id) {
-      throw new Error('ID da conta não encontrado no token');
-    }
+  static returnUserIdFromToken(token = '') {
+    if (!token) throw new Error('Token ausente');
+    const decoded = jwt.verify(token, JWT_SECRET);
 
-    return decoded.id;
+    // suporta sub (recomendado) e seu legado { id }
+    const userId = decoded.sub || decoded.id || decoded._id;
+    if (!userId) throw new Error('ID do usuário não encontrado no token');
+    return userId;
   }
 }
 
