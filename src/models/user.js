@@ -19,7 +19,7 @@ const userSchema = new Schema({
   district:   { type: String, required: true },
   street:     { type: String, required: true },
   number:     { type: String, required: true },
-  complement: { type: String, required: true },
+  complement: { type: String, required: false },
 
   profilePicture: { data: Buffer, contentType: String },
   createdDate:    { type: Date, default: Date.now },
