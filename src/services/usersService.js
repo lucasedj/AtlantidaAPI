@@ -63,7 +63,7 @@ class UsersService {
 
   static async createUser(userData) {
     logger.info('UsersService.createUser');
-    userData.password = await this.encryptPassword(userData.password);
+    // userData.password = await this.encryptPassword(userData.password);
     return await UserRepository.createUser(userData);
   }
 
