@@ -23,7 +23,13 @@ const routes = (app) => {
 
   app.use(express.json());
 
-  app.use(adressesRoutes, usersRoutes, certificatesRoutes, diveLogsRoutes, diveStatisticsRoutes, divingSpotRoutes, commentRoutes);
+  app.use(adressesRoutes);
+  app.use(usersRoutes);
+  app.use(certificatesRoutes);
+  app.use(diveLogsRoutes);
+  app.use(diveStatisticsRoutes);
+  app.use(divingSpotRoutes);
+  app.use(commentRoutes);
 };
 
 export default routes;
