@@ -17,37 +17,38 @@ class UsersService {
 
   static async sendPasswordResetEmail(userEmail, newPassword) {
     logger.info('UsersService.sendPasswordResetEmail');
-
     sgMail.setApiKey(process.env.TOKEN_SENDGRID);
 
     return new Promise((resolve, reject) => {
-        fs.readFile("./src/emails/emailRecoverPassword.html", "utf-8", (err, htmlContent) => {
-          if (err) {
-            console.error("Erro ao ler o arquivo HTML:", err);
-            reject(err);
-            return;
-          }
+      fs.readFile("./src/emails/emailRecoverPassword.html", "utf-8", (err, htmlContent) => {
+        if (err) {
+          console.error("Erro ao ler o arquivo HTML:", err);
+          reject(err);
+          return;
+        }
 
-          const personalizedHtmlContent = htmlContent.replace('{{newPassword}}', newPassword);
-          const msg = {
-            to: userEmail,
-            from: "atlantidamergulhos@gmail.com",
-            subject: "Recuperação de Senha",
-            text: `Sua nova senha é: ${newPassword}`,
-            html: personalizedHtmlContent,
-          };
+        const personalizedHtmlContent = htmlContent.replace('{{newPassword}}', newPassword);
+        const msg = {
+          to: userEmail,
+          from: "atlantidawebservice@gmail.com",
+          subject: "Recuperação de Senha",
+          text: `Sua nova senha é: ${newPassword}`,
+          html: personalizedHtmlContent,
+        };
 
-          sgMail
-            .send(msg)
-            .then(() => {
-              logger.info('Password reset email sent');
-              resolve();
-            })
-            .catch((error) => {
-              logger.error(`Error sending email: ${error.message}`);
-              reject(error);
-            });
-        });
+        sgMail
+          .send(msg)
+          .then(() => {
+            logger.info('Password reset email sent');
+            resolve();
+          })
+          .catch((error) => {
+            // Log detalhado
+            console.error("Erro detalhado ao enviar email:", error.response?.body || error);
+            logger.error(`Error sending email: ${error.message}`);
+            reject(error);
+          });
+      });
     });
   }
 
@@ -78,10 +79,11 @@ class UsersService {
     const newPassword = crypto.randomBytes(5).toString('hex');
     const newPasswordEncrypted = await this.encryptPassword(newPassword);
 
+    // Envia email com logs detalhados
     await this.sendPasswordResetEmail(user.email, newPassword);
 
     await UserRepository.findByIdAndUpdate(user._id, { password: newPasswordEncrypted });
- }
+  }
 
   static async updatePassword(id, currentPassword, newPassword) {
     logger.info('UsersService.updatePassword');
@@ -91,8 +93,7 @@ class UsersService {
     if (!passwordMatch) {
       logger.info('Error: Senha atual incorreta');
       throw new Error('Senha atual incorreta');
-    }
-    else{
+    } else {
       logger.info('Success');
       const newPasswordEncrypted = await this.encryptPassword(newPassword);
       await UserRepository.findByIdAndUpdate(id, { password: newPasswordEncrypted });
@@ -101,10 +102,9 @@ class UsersService {
 
   static async updateUser(id, userData) {
     logger.info('UsersService.updateUser');
-
     delete userData.password;
     return await UserRepository.findByIdAndUpdate(id, userData);
- }
+  }
 
   static async deleteUser(id) {
     logger.info('UsersService.deleteUser');

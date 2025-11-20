@@ -1,4 +1,3 @@
-// controllers/usersController.js
 import TokenService from '../services/tokenService.js';
 import UsersService from '../services/usersService.js';
 import DiveLogsService from '../services/diveLogsService.js';
@@ -8,7 +7,7 @@ import AddressesService from '../services/addressesService.js';
 class UserController {
   static validateToken = async (_req, res) => {
     try {
-      res.status(200).json({ message: 'Token valido' });
+      res.status(200).json({ message: 'Token válido' });
     } catch (err) {
       res.status(500).send({ message: err.message });
     }
@@ -55,27 +54,23 @@ class UserController {
   static async recoverPassword(req, res) {
     try {
       await UsersService.recoverPassword(req.body.email);
-      res.status(201).json({ message: "Senha redefinida com sucesso" });
+      res.status(201).json({ message: "Email enviado com sucesso" });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      // Aqui retornamos o erro detalhado caso seja do SendGrid ou outro
+      console.error("Erro ao recuperar senha:", error);
+      const errorMessage = error.response?.body?.errors?.[0]?.message || error.message || "Erro desconhecido";
+      res.status(500).json({ message: `Erro ao enviar o email: ${errorMessage}` });
     }
   }
 
-  // 🔧 PATCH AQUI
   static async login(req, res) {
     try {
-      // 'local' já autenticou e colocou o user aqui:
-      const user = req.user; // seguro (sem password)
-      // Assina com sub = _id (e opcionalmente email)
+      const user = req.user;
       const token = await TokenService.createTokenJWT({
         id: user._id?.toString?.() ?? user._id,
         email: user.email,
       });
-
-      // opcional: enviar também no header, no formato Bearer
       res.set('Authorization', `Bearer ${token}`);
-
-      // front já espera token no body
       return res.status(200).json({ token, user });
     } catch (error) {
       return res.status(401).json({ message: error.message });
@@ -105,7 +100,6 @@ class UserController {
   static async deleteUser(req, res) {
     try {
       const userId = await TokenService.returnUserIdToToken(req.headers.authorization);
-
       await UsersService.deleteUser(userId);
 
       const diveLogs = await DiveLogsService.findDiveLogsByUserId(userId);
