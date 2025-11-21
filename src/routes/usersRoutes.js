@@ -15,5 +15,5 @@ usersRoutes
   .put('/api/users', bearer, UserController.updateUser)
   .put('/api/users/updatePassword', bearer, UserController.updatePassword)
   .delete('/api/users', bearer, UserController.deleteUser);
-
+  
 export default usersRoutes;

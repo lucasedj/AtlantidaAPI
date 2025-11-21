@@ -7,6 +7,7 @@ import bcryptjs from 'bcryptjs';
 import sgMail from '@sendgrid/mail';
 import UserRepository from '../repositories/userRepository.js';
 import logger from '../utils/logger.js';
+import User from '../models/user.js'; 
 
 class UsersService {
   static async encryptPassword(password) {
@@ -86,19 +87,38 @@ class UsersService {
   }
 
   static async updatePassword(id, currentPassword, newPassword) {
-    logger.info('UsersService.updatePassword');
+  logger.info('UsersService.updatePassword');
 
-    const user = await UserRepository.findById(id);
-    const passwordMatch = await bcryptjs.compare(currentPassword, user.password);
-    if (!passwordMatch) {
-      logger.info('Error: Senha atual incorreta');
-      throw new Error('Senha atual incorreta');
-    } else {
-      logger.info('Success');
-      const newPasswordEncrypted = await this.encryptPassword(newPassword);
-      await UserRepository.findByIdAndUpdate(id, { password: newPasswordEncrypted });
-    }
+  if (!currentPassword || !newPassword) {
+    throw new Error('Senha atual e nova senha são obrigatórias.');
   }
+
+  // 🔑 Carrega o usuário trazendo o campo password (mesmo com select:false)
+  const user = await User.findById(id).select('+password');
+
+  if (!user) {
+    throw new Error('Usuário não encontrado.');
+  }
+
+  if (!user.password) {
+    // proteção extra contra o Illegal arguments
+    throw new Error('Senha não encontrada para este usuário.');
+  }
+
+  const passwordMatch = await bcryptjs.compare(currentPassword, user.password);
+  if (!passwordMatch) {
+    logger.info('Error: Senha atual incorreta');
+    throw new Error('Senha atual incorreta');
+  }
+
+  // 👉 Aqui usamos o hook pre('save') do model para hashear a nova senha
+  user.password = newPassword;           // texto puro
+  await user.save();                     // pre('save') vai fazer o hash
+
+  logger.info('Success: senha atualizada');
+}
+
+
 
   static async updateUser(id, userData) {
     logger.info('UsersService.updateUser');
