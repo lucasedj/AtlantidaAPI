@@ -21,7 +21,7 @@ const __dirname  = path.dirname(__filename);
    Middlewares base
 ========================= */
 app.use(cors({
-  origin: "https://atlantida-seven.vercel.app/",
+  origin: "https://atlantida-seven.vercel.app",
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
